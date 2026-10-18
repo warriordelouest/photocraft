@@ -609,6 +609,10 @@ pub(crate) fn invoke_unguarded(app: &mut PhotocraftApp, ctx: &egui::Context, id:
             app.jobs.focus = None;
             Ok(json!({"document": to}))
         }
+        "window.assistant" => {
+            app.assistant.open = !app.assistant.open;
+            Ok(Value::Null)
+        }
         t if t.starts_with("window.toggle.") => {
             // A shown but collapsed dock group is expanded rather than hidden (#129).
             if let Some(g) = crate::dock::Group::from_key(&t["window.toggle.".len()..]).filter(|g| g.shown(&app.ui.panels) && app.ui.dock.is_collapsed(*g)) {
@@ -825,6 +829,7 @@ fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
     }
     let p = &app.ui.panels;
     Some(match id {
+        "window.assistant" => app.assistant.open,
         "window.toggle.layers" => p.layers,
         "window.toggle.history" => p.history,
         "window.toggle.properties" => p.properties,

@@ -576,7 +576,10 @@ fn main() -> eframe::Result {
             };
             #[cfg(not(target_os = "linux"))]
             let session = Session::new();
+            services.assistant_dir = services::config_dir();
             let mut app = PhotocraftApp::new(session, services);
+            // The AI assistant panel is open at launch (Window › AI Assistant hides it).
+            app.assistant.open = true;
             app.min_frame_ms = uncapped.then_some(1000.0 / 240.0);
             app.integrated_titlebar = cfg!(target_os = "macos");
             app.custom_titlebar = custom_titlebar;

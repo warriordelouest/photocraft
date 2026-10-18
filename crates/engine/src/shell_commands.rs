@@ -53,6 +53,7 @@ pub const SHELL_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("window.newWindowForDocument", "New Window for Document", &["Window", "Arrange"], None),
     ("window.toggle.layers", "Layers", &["Window"], Some("F7")),
     ("window.toggle.history", "History", &["Window"], None),
+    ("window.assistant", "AI Assistant", &["Window"], None),
     ("window.toggle.properties", "Properties", &["Window"], None),
     ("window.toggle.color", "Color", &["Window"], Some("F6")),
     ("window.toggle.brushSettings", "Brush Settings", &["Window"], Some("F5")),

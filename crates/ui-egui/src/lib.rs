@@ -21,6 +21,7 @@ pub mod adjust_preview;
 pub mod adjust_ui;
 mod alt_grab;
 pub mod analysis_ui;
+pub mod assistant_ui;
 pub mod anchor_tools;
 pub mod artboard_tool;
 pub mod artboard_ui;
@@ -548,6 +549,9 @@ pub struct Services {
     /// while AppKit's run loop is still going crashes or hangs Touch Bar Macs (#1575, #1458).
     /// Without one, eframe closes the window and the app ends with it.
     pub quit: Option<QuitFn>,
+    /// Where the AI assistant keeps its gateway and model settings (`assistant.json`); `None`
+    /// keeps them for the session only.
+    pub assistant_dir: Option<std::path::PathBuf>,
 }
 
 /// A document histogram being computed off the UI thread: (document, revision, receiver of
@@ -561,6 +565,8 @@ pub struct PhotocraftApp {
     pub session: Session,
     pub ui: UiState,
     pub services: Services,
+    /// Window › AI Assistant: the chat panel and its agent (`assistant_ui`).
+    pub assistant: assistant_ui::Assistant,
     /// Canvas caches per (document, display): CPU textures hold monitor values; the GPU
     /// canvas state is shared (`canvas::GPU_OUTPUT`).
     canvases: HashMap<(DocId, u32), canvas::CanvasCache>,
@@ -846,10 +852,12 @@ pub struct PhotocraftApp {
 
 impl PhotocraftApp {
     pub fn new(session: Session, services: Services) -> Self {
+        let assistant = assistant_ui::Assistant::with_config_dir(services.assistant_dir.clone());
         let mut app = Self {
             session,
             ui: UiState::default(),
             services,
+            assistant,
             canvases: HashMap::new(),
             navigator_textures: HashMap::new(),
             display_memo: HashMap::new(),
@@ -2044,6 +2052,8 @@ impl eframe::App for PhotocraftApp {
         if chrome && self.ui.panels.toolbar {
             panels::toolbar(self, ui);
         }
+        // The assistant's tool calls run here, before anything draws the document.
+        assistant_ui::poll(self, &ctx);
         if chrome && self.ui.panels.dock {
             panels::right_dock(self, ui);
         }
@@ -2053,6 +2063,9 @@ impl eframe::App for PhotocraftApp {
             canvas::document_area(self, ui);
         });
         panels::properties_window(self, &ctx);
+        if chrome {
+            assistant_ui::window(self, &ctx);
+        }
         brush_panel::window(self, &ctx);
         preset_panels::windows(self, &ctx);
         gradient_ui::editor_window(self, &ctx);
